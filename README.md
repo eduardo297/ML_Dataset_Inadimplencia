@@ -2,13 +2,10 @@ ml-inadimplencia/
 │
 │
 ├── notebooks/
-│   └── 01_analise_exploratoria.ipynb
+│   ├─── analise_exploratoria.ipynb
+│   └── pre_processamento.ipynb
 │
 ├── src/
-│
-├── models/
-│
-├── api/
 │
 ├── requirements.txt
 │
