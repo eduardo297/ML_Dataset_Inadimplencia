@@ -2,3 +2,4 @@ Pandas==3.0.5
 NumPy==2.4.6
 Matplotlib==3.11.1
 Scikit-learn==1.9.0
+xgboost==1.7.6
