@@ -35,7 +35,7 @@ sinalizar um cliente adimplente por engano.
 
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate 
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -126,10 +126,62 @@ F2-score e ROC-AUC).
   verdadeiro positivo e um falso negativo, para entender em que situações o
   modelo tende a errar.
 
+## Análise de fairness
+
+O modelo final (XGBoost) foi avaliado quanto a disparidade de desempenho
+entre subgrupos de duas variáveis sensíveis: **X2 (sexo)** e **X4 (estado
+civil)**.
+
+### X2 — Sexo
+
+| Grupo | Accuracy | Precision | Selection Rate | Contagem |
+| :---: | :---: | :---: | :---: | ---: |
+| 1 | 0,557 | 0,335 | 0,604 | 2.332 |
+| 2 | 0,598 | 0,318 | 0,535 | 3.661 |
+
+- **Accuracy Difference:** 0,0416
+- **Selection Rate Difference:** 0,0694
+
+Disparidade pequena. Os dois grupos têm amostra grande (>2.300 cada), então
+a diferença de ~4 pontos percentuais de acurácia é uma estimativa
+relativamente confiável e não indica um problema relevante de equidade.
+
+### X4 — Estado civil
+
+| Grupo | Accuracy | Precision | Selection Rate | Contagem |
+| :---: | :---: | :---: | :---: | ---: |
+| 1 | 0,581 | 0,346 | 0,578 | 2.756 |
+| 2 | 0,585 | 0,307 | 0,545 | 3.172 |
+| 3 | 0,462 | 0,273 | 0,677 | 65 |
+
+- **Accuracy Difference:** 0,1236
+
+A maior disparidade encontrada em todo o projeto está aqui: o grupo 3
+("outros", códigos não documentados de X4 agrupados no pré-processamento)
+apresenta accuracy ~12 pontos percentuais abaixo dos demais.
+
+**Ressalva importante:** esse grupo tem apenas **65 observações**, contra
+mais de 2.700 nos outros dois grupos. Com uma amostra tão pequena, o
+erro-padrão da estimativa é grande — não é possível distinguir, com os dados
+atuais, se essa queda de desempenho reflete:
+
+1. **Ruído estatístico** (amostra pequena demais para confiar no número), ou
+2. Uma limitação real do modelo nesse subgrupo, já que "outros" provavelmente
+   mistura perfis heterogêneos de estado civil, e o modelo teve poucos
+   exemplos para aprender esse padrão.
+
+**Conclusão:** não há evidência de discriminação sistemática do modelo por
+sexo. Para estado civil, a maior disparidade está concentrada exatamente no
+subgrupo com menor representação amostral, o que limita a confiabilidade da
+conclusão — não é possível afirmar nem descartar viés nesse grupo com os
+dados disponíveis.
+
+**Recomendação:** antes de qualquer uso em produção, coletar mais exemplos
+do grupo "outros" de X4 (ou tratar esse subgrupo separadamente) para permitir
+uma avaliação de equidade mais confiável.
+
 ## Limitações e próximos passos
 
-- O modelo não foi avaliado quanto a **fairness/viés** entre grupos sensíveis
-  (sexo, estado civil) — recomendado antes de qualquer uso em produção.
 - O dataset é de 2005 (Taiwan); padrões de comportamento de crédito podem não
   refletir contextos ou períodos diferentes.
 - Não há ainda persistência do modelo final (`models/`) nem um endpoint/demo
