@@ -193,4 +193,4 @@ uma avaliação de equidade mais confiável.
 ## Dependências principais
 
 Ver `requirements.txt`. Principais bibliotecas: `pandas`, `numpy`,
-`scikit-learn`, `xgboost`, `shap`, `matplotlib`, `ucimlrepo`.
+`scikit-learn`, `xgboost`, `shap`, `matplotlib`, `ucimlrepo`, `fairlearn`.
