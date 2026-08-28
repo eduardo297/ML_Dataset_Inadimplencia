@@ -3,8 +3,10 @@ Funções auxiliares de treino, busca de hiperparâmetros, escolha de threshold,
 avaliação de modelo e montagem da tabela comparativa entre modelos.
 """
 
+
 import numpy as np
 import pandas as pd
+import joblib
 from sklearn.metrics import (
     confusion_matrix,
     f1_score,
@@ -12,6 +14,10 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
+
+from pathlib import Path
+
+
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 
 from src.config import (
@@ -19,6 +25,8 @@ from src.config import (
     COLUNAS_HISTORICO_PAGAMENTO,
     COLUNAS_PAGAMENTOS_ANTERIORES,
 )
+
+DIR_MODELOS = Path("../models")
 
 
 def realizar_busca_hiperparametros(
@@ -119,3 +127,32 @@ def montar_tabela_comparacao(resultados: dict) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(linhas)
+
+def salvar_modelo_final(modelo, threshold, metricas, nome_arquivo="modelo_final_xgb"):
+    """
+    Salva o pipeline final (preprocessador + modelo), o threshold otimizado
+    e as métricas de teste em um único artefato .joblib.
+    """
+    DIR_MODELOS.mkdir(exist_ok=True, parents=True)
+
+    if not nome_arquivo.endswith(".joblib"):
+        nome_arquivo += ".joblib"
+
+    artefato = {
+        "pipeline": modelo,             # Pipeline completo (preprocessador + modelo)
+        "threshold": threshold,         # threshold otimizado via F2-score
+        "metricas_teste": metricas,     # métricas no conjunto de teste, para referência
+    }
+
+    caminho = DIR_MODELOS / nome_arquivo
+    joblib.dump(artefato, caminho)
+
+    return f"Modelo salvo em {caminho}"
+
+
+def carregar_modelo_final(nome_arquivo="modelo_final_xgb"):
+    """Carrega o artefato salvo por salvar_modelo_final()."""
+    if not nome_arquivo.endswith(".joblib"):
+        nome_arquivo += ".joblib"
+
+    return joblib.load(DIR_MODELOS / nome_arquivo)

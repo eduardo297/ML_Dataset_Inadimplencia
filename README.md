@@ -170,25 +170,20 @@ atuais, se essa queda de desempenho reflete:
    mistura perfis heterogêneos de estado civil, e o modelo teve poucos
    exemplos para aprender esse padrão.
 
-**Conclusão:** não há evidência de discriminação sistemática do modelo por
-sexo. Para estado civil, a maior disparidade está concentrada exatamente no
-subgrupo com menor representação amostral, o que limita a confiabilidade da
-conclusão — não é possível afirmar nem descartar viés nesse grupo com os
-dados disponíveis.
+**Conclusão**
 
-**Recomendação:** antes de qualquer uso em produção, coletar mais exemplos
-do grupo "outros" de X4 (ou tratar esse subgrupo separadamente) para permitir
-uma avaliação de equidade mais confiável.
+Este projeto teve como objetivo prever a inadimplência de clientes de cartão de crédito no mês seguinte, a partir de dados históricos de pagamento, faturas e informações demográficas de 30.000 clientes.
+A análise exploratória revelou um conjunto de dados de boa qualidade, sem valores ausentes, mas com alguns pontos que exigiram decisões cuidadosas: 35 registros duplicados foram removidos, códigos não documentados nas variáveis de educação e estado civil foram agrupados em categorias "outros", e valores negativos nas faturas foram preservados por falta de evidência de que fossem erros — todas essas decisões foram documentadas e centralizadas em src/preprocessing.py para garantir reprodutibilidade.
 
-## Limitações e próximos passos
+Três modelos foram treinados e comparados — Regressão Logística, Random Forest e XGBoost — todos com hiperparâmetros ajustados via GridSearchCV e threshold de decisão otimizado para maximizar o F2-score, priorizando a identificação de inadimplentes sobre a precisão geral. O XGBoost apresentou o melhor equilíbrio entre recall e precisão (F2-score de 0,631 e ROC-AUC de 0,775), sendo selecionado como modelo final.
 
-- O dataset é de 2005 (Taiwan); padrões de comportamento de crédito podem não
-  refletir contextos ou períodos diferentes.
-- Não há ainda persistência do modelo final (`models/`) nem um endpoint/demo
-  para servir previsões — próximo passo natural do projeto.
-- O threshold ótimo foi escolhido para maximizar F2 no conjunto de
-  treino/validação; validar periodicamente se esse valor continua adequado
-  caso o modelo seja reutilizado com novos dados.
+A análise de interpretabilidade via SHAP mostrou que o histórico de pagamento recente (X6) é o fator mais determinante nas previsões do modelo, seguido pelos valores de fatura e limite de crédito — um resultado alinhado com a intuição de negócio de que o comportamento de pagamento recente é o melhor preditor de inadimplência futura. A análise de casos individuais (falsos negativos vs. verdadeiros positivos) reforçou esse padrão, mostrando que o modelo tende a errar justamente quando o histórico recente não é claramente negativo, mesmo que outros indicadores financeiros já sinalizem risco.
+
+A avaliação de fairness não identificou disparidade relevante entre grupos de sexo. Para estado civil, a maior disparidade encontrada está concentrada no subgrupo "outros", que representa menos de 2% da amostra — o que impede conclusões definitivas sobre viés nesse grupo específico.
+
+**Limitações principais**: o dataset é de 2005 e de um contexto econômico específico (Taiwan), o que limita a generalização para outros mercados ou períodos; o subgrupo "outros" de estado civil tem representação amostral insuficiente para uma avaliação de equidade robusta.
+
+**Próximos passos**: coletar mais dados do subgrupo sub-representado antes de qualquer decisão sobre equidade; construir uma interface simples de inferência para demonstrar o uso prático do modelo; e revisitar periodicamente o threshold de decisão caso o modelo seja aplicado a uma nova base de clientes.
 
 ## Dependências principais
 

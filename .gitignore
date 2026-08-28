@@ -1,1 +1,30 @@
+# Dados e modelos gerados (não versionar - são artefatos, não código-fonte)
+data/raw/*.csv
+models/*.joblib
+models/*.pkl
+
+# Mantém as pastas no git mesmo vazias
+!data/raw/.gitkeep
+!models/.gitkeep
+
+# Ambiente virtual
+.ml_venv/
 ml_venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.ipynb_checkpoints/
+
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
