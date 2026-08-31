@@ -23,8 +23,10 @@ sinalizar um cliente adimplente por engano.
 │   ├── config.py               # caminhos e definição de grupos de features
 │   ├── data.py                 # carregamento do dataset com cache local
 │   ├── preprocessing.py        # limpeza dos dados e ColumnTransformer
-│   ├── modeling.py              # tuning, threshold, avaliação e comparação de modelos
+│   ├── modeling.py              # tuning, threshold, avaliação, comparação e persistência do modelo
 │   └── interpretability.py     # funções auxiliares de SHAP
+├── app.py                      # demo interativa (Streamlit) do modelo final
+├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
@@ -52,7 +54,20 @@ da UCI.
 **3. Rodar os notebooks, na ordem**
 
 1. `notebooks/analise_exploratoria.ipynb`
-2. `notebooks/pre_processamento.ipynb`
+2. `notebooks/pre_processamento.ipynb` — ao final, salva o modelo treinado em
+   `models/modelo_final_xgb.joblib` via `salvar_modelo_final()`.
+
+**4. Rodar a demo interativa**
+
+Com o modelo já salvo (passo 3), a partir da raiz do projeto:
+
+```bash
+streamlit run app.py
+```
+
+A aplicação abre no navegador, recebe os dados de um cliente através de
+campos na barra lateral e retorna a probabilidade de inadimplência e a
+decisão do modelo (usando o mesmo threshold otimizado no notebook).
 
 ## Sobre os dados
 
@@ -170,22 +185,80 @@ atuais, se essa queda de desempenho reflete:
    mistura perfis heterogêneos de estado civil, e o modelo teve poucos
    exemplos para aprender esse padrão.
 
-**Conclusão**
+**Conclusão:** não há evidência de discriminação sistemática do modelo por
+sexo. Para estado civil, a maior disparidade está concentrada exatamente no
+subgrupo com menor representação amostral, o que limita a confiabilidade da
+conclusão — não é possível afirmar nem descartar viés nesse grupo com os
+dados disponíveis.
 
-Este projeto teve como objetivo prever a inadimplência de clientes de cartão de crédito no mês seguinte, a partir de dados históricos de pagamento, faturas e informações demográficas de 30.000 clientes.
-A análise exploratória revelou um conjunto de dados de boa qualidade, sem valores ausentes, mas com alguns pontos que exigiram decisões cuidadosas: 35 registros duplicados foram removidos, códigos não documentados nas variáveis de educação e estado civil foram agrupados em categorias "outros", e valores negativos nas faturas foram preservados por falta de evidência de que fossem erros — todas essas decisões foram documentadas e centralizadas em src/preprocessing.py para garantir reprodutibilidade.
+**Recomendação:** antes de qualquer uso em produção, coletar mais exemplos
+do grupo "outros" de X4 (ou tratar esse subgrupo separadamente) para permitir
+uma avaliação de equidade mais confiável.
 
-Três modelos foram treinados e comparados — Regressão Logística, Random Forest e XGBoost — todos com hiperparâmetros ajustados via GridSearchCV e threshold de decisão otimizado para maximizar o F2-score, priorizando a identificação de inadimplentes sobre a precisão geral. O XGBoost apresentou o melhor equilíbrio entre recall e precisão (F2-score de 0,631 e ROC-AUC de 0,775), sendo selecionado como modelo final.
+## Limitações e próximos passos
 
-A análise de interpretabilidade via SHAP mostrou que o histórico de pagamento recente (X6) é o fator mais determinante nas previsões do modelo, seguido pelos valores de fatura e limite de crédito — um resultado alinhado com a intuição de negócio de que o comportamento de pagamento recente é o melhor preditor de inadimplência futura. A análise de casos individuais (falsos negativos vs. verdadeiros positivos) reforçou esse padrão, mostrando que o modelo tende a errar justamente quando o histórico recente não é claramente negativo, mesmo que outros indicadores financeiros já sinalizem risco.
+- O dataset é de 2005 (Taiwan); padrões de comportamento de crédito podem não
+  refletir contextos ou períodos diferentes.
+- O subgrupo "outros" de estado civil (X4) tem representação amostral
+  insuficiente (65 casos) para uma avaliação de equidade robusta — ver seção
+  de fairness.
+- O threshold ótimo foi escolhido para maximizar F2 no conjunto de
+  treino/validação; validar periodicamente se esse valor continua adequado
+  caso o modelo seja reutilizado com novos dados.
+- Não há testes automatizados para as funções de `src/` ainda.
 
-A avaliação de fairness não identificou disparidade relevante entre grupos de sexo. Para estado civil, a maior disparidade encontrada está concentrada no subgrupo "outros", que representa menos de 2% da amostra — o que impede conclusões definitivas sobre viés nesse grupo específico.
+## Conclusão
 
-**Limitações principais**: o dataset é de 2005 e de um contexto econômico específico (Taiwan), o que limita a generalização para outros mercados ou períodos; o subgrupo "outros" de estado civil tem representação amostral insuficiente para uma avaliação de equidade robusta.
+Este projeto teve como objetivo prever a inadimplência de clientes de cartão
+de crédito no mês seguinte, a partir de dados históricos de pagamento,
+faturas e informações demográficas de 30.000 clientes.
 
-**Próximos passos**: construir uma interface simples de inferência para demonstrar o uso prático do modelo.
+A análise exploratória revelou um conjunto de dados de boa qualidade, sem
+valores ausentes, mas com alguns pontos que exigiram decisões cuidadosas: 35
+registros duplicados foram removidos, códigos não documentados nas variáveis
+de educação e estado civil foram agrupados em categorias "outros", e valores
+negativos nas faturas foram preservados por falta de evidência de que fossem
+erros — todas essas decisões foram documentadas e centralizadas em
+`src/preprocessing.py` para garantir reprodutibilidade.
+
+Três modelos foram treinados e comparados — Regressão Logística, Random
+Forest e XGBoost — todos com hiperparâmetros ajustados via `GridSearchCV` e
+threshold de decisão otimizado para maximizar o F2-score, priorizando a
+identificação de inadimplentes sobre a precisão geral. O XGBoost apresentou o
+melhor equilíbrio entre recall e precisão (F2-score de 0,631 e ROC-AUC de
+0,775), sendo selecionado como modelo final.
+
+A análise de interpretabilidade via SHAP mostrou que o histórico de
+pagamento recente (X6) é o fator mais determinante nas previsões do modelo,
+seguido pelos valores de fatura e limite de crédito — um resultado alinhado
+com a intuição de negócio de que o comportamento de pagamento recente é o
+melhor preditor de inadimplência futura. A análise de casos individuais
+(falsos negativos vs. verdadeiros positivos) reforçou esse padrão, mostrando
+que o modelo tende a errar justamente quando o histórico recente não é
+claramente negativo, mesmo que outros indicadores financeiros já sinalizem
+risco.
+
+A avaliação de fairness não identificou disparidade relevante entre grupos
+de sexo. Para estado civil, a maior disparidade encontrada está concentrada
+no subgrupo "outros", que representa menos de 2% da amostra — o que impede
+conclusões definitivas sobre viés nesse grupo específico.
+
+O modelo final foi serializado junto com o threshold otimizado e disponibilizado
+através de uma demo interativa (`app.py`), permitindo simular a previsão para
+um cliente novo diretamente pela interface, sem precisar rodar os notebooks.
+
+**Limitações principais:** o dataset é de 2005 e de um contexto econômico
+específico (Taiwan), o que limita a generalização para outros mercados ou
+períodos; o subgrupo "outros" de estado civil tem representação amostral
+insuficiente para uma avaliação de equidade robusta; e o modelo ainda não foi
+testado em produção ou com dados fora da distribuição de treino.
+
+**Próximos passos:** coletar mais dados do subgrupo sub-representado antes de
+qualquer decisão sobre equidade; adicionar testes automatizados para as
+funções de `src/`; e revisitar periodicamente o threshold de decisão caso o
+modelo seja aplicado a uma nova base de clientes.
 
 ## Dependências principais
 
 Ver `requirements.txt`. Principais bibliotecas: `pandas`, `numpy`,
-`scikit-learn`, `xgboost`, `shap`, `matplotlib`, `ucimlrepo`, `fairlearn`.
+`scikit-learn`, `xgboost`, `shap`, `matplotlib`, `ucimlrepo`, `streamlit`.

@@ -5,3 +5,4 @@ Scikit-learn==1.9.0
 xgboost==1.7.6
 shap==0.42.1
 fairlearn== 0.14.0
+streamlit
