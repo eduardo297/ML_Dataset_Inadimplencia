@@ -24,9 +24,9 @@ from src.config import (
     COLUNAS_FATURAS,
     COLUNAS_HISTORICO_PAGAMENTO,
     COLUNAS_PAGAMENTOS_ANTERIORES,
+    DIR_MODELOS,
 )
 
-DIR_MODELOS = Path("../models")
 
 
 def realizar_busca_hiperparametros(
