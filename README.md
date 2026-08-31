@@ -183,7 +183,7 @@ A avaliação de fairness não identificou disparidade relevante entre grupos de
 
 **Limitações principais**: o dataset é de 2005 e de um contexto econômico específico (Taiwan), o que limita a generalização para outros mercados ou períodos; o subgrupo "outros" de estado civil tem representação amostral insuficiente para uma avaliação de equidade robusta.
 
-**Próximos passos**: coletar mais dados do subgrupo sub-representado antes de qualquer decisão sobre equidade; construir uma interface simples de inferência para demonstrar o uso prático do modelo; e revisitar periodicamente o threshold de decisão caso o modelo seja aplicado a uma nova base de clientes.
+**Próximos passos**: construir uma interface simples de inferência para demonstrar o uso prático do modelo.
 
 ## Dependências principais
 
